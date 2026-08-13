@@ -1,0 +1,101 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=MyStrongPassword123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data_collect:/var/opt/mssql
+      - ./CollectPortal.BAK:/backup/CollectPortal.BAK:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'MyStrongPassword123!' -C -Q 'SELECT 1' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  sqlserver-restore:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      - SA_PASSWORD=MyStrongPassword123!
+    restart: "no"
+    command: |
+      /bin/bash -c "
+      cat > /tmp/restore.sql <<'SQL'
+      IF DB_ID(N'COLLECTPortal') IS NULL
+      BEGIN
+          DECLARE @bak nvarchar(260) = N'/backup/CollectPortal.BAK';
+          DECLARE @dataLogical sysname;
+          DECLARE @logLogical sysname;
+          DECLARE @fileListSql nvarchar(max);
+          DECLARE @restoreSql nvarchar(max);
+
+          CREATE TABLE #filelist (
+              LogicalName nvarchar(128),
+              PhysicalName nvarchar(260),
+              [Type] char(1),
+              FileGroupName nvarchar(128) NULL,
+              [Size] numeric(20,0),
+              MaxSize numeric(20,0),
+              FileID bigint,
+              CreateLSN numeric(25,0),
+              DropLSN numeric(25,0),
+              UniqueID uniqueidentifier,
+              ReadOnlyLSN numeric(25,0),
+              ReadWriteLSN numeric(25,0),
+              BackupSizeInBytes bigint,
+              SourceBlockSize int,
+              FileGroupID int,
+              LogGroupGUID uniqueidentifier NULL,
+              DifferentialBaseLSN numeric(25,0) NULL,
+              DifferentialBaseGUID uniqueidentifier NULL,
+              IsReadOnly bit,
+              IsPresent bit,
+              TDEThumbprint varbinary(32) NULL,
+              SnapshotURL nvarchar(360) NULL
+          );
+
+          SET @fileListSql = N'RESTORE FILELISTONLY FROM DISK = ''' + @bak + N'''';
+          INSERT INTO #filelist EXEC(@fileListSql);
+
+          SELECT TOP (1) @dataLogical = LogicalName
+          FROM #filelist
+          WHERE [Type] = 'D'
+          ORDER BY FileID;
+
+          SELECT TOP (1) @logLogical = LogicalName
+          FROM #filelist
+          WHERE [Type] = 'L'
+          ORDER BY FileID;
+
+          IF @dataLogical IS NULL OR @logLogical IS NULL
+              THROW 50000, 'Could not determine logical file names from backup.', 1;
+
+          SET @restoreSql =
+              N'RESTORE DATABASE [COLLECTPortal] FROM DISK = N''' + @bak + N''' '
+            + N'WITH REPLACE, RECOVERY, STATS = 5, '
+            + N'MOVE N''' + REPLACE(@dataLogical, '''', '''''') + N''' TO N''/var/opt/mssql/data/COLLECTPortal.mdf'', '
+            + N'MOVE N''' + REPLACE(@logLogical, '''', '''''') + N''' TO N''/var/opt/mssql/data/COLLECTPortal_log.ldf'';';
+
+          PRINT @restoreSql;
+          EXEC(@restoreSql);
+      END
+      ELSE
+      BEGIN
+          PRINT N'Database [COLLECTPortal] already exists; skipping restore.';
+      END
+      SQL
+      /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P \"$$SA_PASSWORD\" -C -b -i /tmp/restore.sql"
+
+volumes:
+  sqlserver_data_collect:
+
