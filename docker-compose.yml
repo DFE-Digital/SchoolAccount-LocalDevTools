@@ -18,6 +18,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    networks:
+      - default
 
   sqlserver-restore:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -95,6 +97,13 @@ services:
       END
       SQL
       /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P \"$$SA_PASSWORD\" -C -b -i /tmp/restore.sql"
+    networks:
+      - default
+
+networks:
+  default:
+    name: db-network
+    driver: bridge
 
 volumes:
   sqlserver_data_collect:
