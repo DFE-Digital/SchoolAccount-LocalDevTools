@@ -96,6 +96,31 @@ services:
       SQL
       /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P \"$$SA_PASSWORD\" -C -b -i /tmp/restore.sql"
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    platform: linux/amd64
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - azurite-data:/data
+    
+  azurite-init:
+    image: mcr.microsoft.com/azure-cli
+    depends_on:
+      - azurite
+    restart: "no"
+    environment:
+      AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://azurite:10002/devstoreaccount1;"
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        az storage table create --name SchoolAccountFeedback &&
+        az storage entity insert --table-name SchoolAccountFeedback \
+          --if-exists replace \
+          --entity PartitionKey="1A234B56-C7DE-891F-G012-345H678IJ9K1" RowKey="1abc2d3e-4fg5-67h8-i9jk-l1m012nop345" Message="this is an initial feedback seed data" Ukprn="12345678"
+      
 volumes:
   sqlserver_data_collect:
-
+  azurite-data:
