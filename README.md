@@ -20,7 +20,7 @@ For the feedback component to be fully functional on the School Account project,
 Azurite provides a local instance of the Azure services (Blob, Table, Queue).
 
 An Azure client container will run alongside the Azurite container to provide the needed table and fields to access the feedback with no errors.
-This will allow you to run the School Account services locally and test this component using Azure or a local tool such as Azure Storage Explorer.
+This will allow you to run the School Account services locally and test this component using a local tool such as Azure Storage Explorer.
 
 ## Local Running
 
