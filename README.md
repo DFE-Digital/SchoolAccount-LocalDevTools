@@ -24,12 +24,12 @@ This will allow you to run the School Account services locally and test this com
 
 ## Local Running
 
-To run all container, run the command:
+To run all containers, run the command:
 ```
 docker compose up -d
 ```
 
-The database server will automatically restart on reboot, the other containers will not, but it can be manually stopped via 
+The database server and azurite container will automatically restart on reboot, but it can be manually stopped via 
 ```
 docker compose stop
 ```

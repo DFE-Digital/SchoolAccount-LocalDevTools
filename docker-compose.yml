@@ -105,6 +105,7 @@ services:
       - "10002:10002"
     volumes:
       - azurite-data:/data
+    restart: unless-stopped
     
   azurite-init:
     image: mcr.microsoft.com/azure-cli
