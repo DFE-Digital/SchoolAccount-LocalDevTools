@@ -106,11 +106,18 @@ services:
     volumes:
       - azurite-data:/data
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 10000 && nc -z 127.0.0.1 10001 && nc -z 127.0.0.1 10002" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     
   azurite-init:
     image: mcr.microsoft.com/azure-cli
     depends_on:
-      - azurite
+      azurite:
+        condition: service_healthy
     restart: "no"
     environment:
       AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://azurite:10002/devstoreaccount1;"
