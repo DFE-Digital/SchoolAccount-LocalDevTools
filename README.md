@@ -1,6 +1,21 @@
 # SchoolAccount-LocalDevTools
 Supporting services and tools to for local development of the School Account Beta.
 
+---
+
+| Software       | Command                                                                                               |
+|----------------|-------------------------------------------------------------------------------------------------------|
+| Docker Desktop | Follow the [official macos install guide](https://docs.docker.com/desktop/setup/install/mac-install/) |
+
+---
+
+## Repos included in School Account services
+
+- [SchoolAccount-CollectAPI](https://github.com/DFE-Digital/SchoolAccount-CollectAPI)
+- [SchoolAccount-CollectNotifications](https://github.com/DFE-Digital/SchoolAccount-CollectNotifications)
+- [SchoolAccount-CollectStateLedgerDatabase](https://github.com/DFE-Digital/SchoolAccount-CollectStateLedgerDatabase)
+- [SchoolAccount-Web](https://github.com/DFE-Digital/SchoolAccount-Web)
+
 ## COLLECT Portal Database
 
 An instance of the COLLECT Portal database is required to run the School Account services.
